@@ -2,6 +2,8 @@
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.util.Tool;
 import java.io.IOException;
+
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import java.util.*;
 import org.apache.commons.logging.Log;
@@ -12,17 +14,23 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
-import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+
+
+
+import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;
+
 import org.apache.hadoop.util.ToolRunner;
 public class WhoToFollow extends Configured implements Tool
 
 {
-
+	public final Log log = LogFactory.getLog(Mapper.class);
 	private static final String OUTPUT_PATH = "intermediate_output";
 
 	 @Override
@@ -31,26 +39,26 @@ public class WhoToFollow extends Configured implements Tool
 	   * Job 1
 	   */
 	  Configuration conf = getConf();
-	 // FileSystem fs = FileSystem.get(conf);
+	 FileSystem fs = FileSystem.get(conf);
 	  Job job = new Job(conf, "Job1");
 	  job.setJarByClass(WhoToFollow.class);
-
-	  job.setMapperClass(Mapper.class);
-	  job.setReducerClass(Reducer.class);
-
+	  log.info(" job 0");
+	  job.setMapperClass(Map1.class);
+	  job.setReducerClass(Reduce1.class);
+	  log.info(" job 1");
 	  //reducer output(k,v) classes 
 	  job.setOutputKeyClass(IntWritable.class);
 	  job.setOutputValueClass(IntWritable.class);
-	  
+	  log.info("job 2");
 	// mapper's output (K,V) classes
 	  job.setMapOutputKeyClass(IntWritable.class);
 	  job.setMapOutputValueClass(IntWritable.class);
-
+	  log.info("job 3");
+	  job.setInputFormatClass(TextInputFormat.class);
+	  job.setOutputFormatClass(SequenceFileOutputFormat.class);
 	 
-	  job.setOutputFormatClass(TextOutputFormat.class);
-	  job.setInputFormatClass(KeyValueTextInputFormat.class);
 
-	 FileInputFormat.addInputPath(job, new Path(args[0]));
+	 FileInputFormat.setInputPaths(job, new Path(args[0]));
 	  TextOutputFormat.setOutputPath(job, new Path(OUTPUT_PATH));
 
 	  job.waitForCompletion(true);
@@ -61,23 +69,23 @@ public class WhoToFollow extends Configured implements Tool
 	  
 	  Job job2 = new Job(conf, "Job 2");
 	  job2.setJarByClass(WhoToFollow.class);
-
+	  log.info("job1 0");
 	  job2.setMapperClass(MapRecommendation.class);
 	  job2.setReducerClass(ReduceRecommendation.class);
-
+	  log.info("job1 1");
 	  //reducer output(k,v) classes 
 	  job2.setOutputKeyClass(IntWritable.class);
 	  job2.setOutputValueClass(IntWritable.class);
-	  
+	  log.info("job1 2");
 	// mapper's output (K,V) classes
 	  job2.setMapOutputKeyClass(IntWritable.class);
 	  job2.setMapOutputValueClass(IntWritable.class);
-
+	  log.info("job1 3");
 
 	 job2.setInputFormatClass(SequenceFileInputFormat.class);
 	 job2.setOutputFormatClass(TextOutputFormat.class);
-
-	  FileInputFormat.addInputPath(job2, new Path(OUTPUT_PATH));
+	 log.info("job1 4");
+	  FileInputFormat.setInputPaths(job2, new Path(OUTPUT_PATH));
 	  TextOutputFormat.setOutputPath(job2, new Path(args[1]));
 
 	  return job2.waitForCompletion(true) ? 0 : 1;
@@ -100,13 +108,13 @@ public class WhoToFollow extends Configured implements Tool
 
 	
 
-	public static class Map extends Mapper<Text, Text, IntWritable, IntWritable> {
-		public final Log log = LogFactory.getLog(Mapper.class);
-	
+	public static class Map1 extends Mapper<Object, Text, IntWritable, IntWritable> {
 		
-		public void map(Text key, Text value, Context context) throws IOException, InterruptedException
+		public final Log log = LogFactory.getLog(Map1.class);
+		
+		public void map(Object key, Text value, Context context) throws IOException, InterruptedException
 		{
-			
+			//log.info("mapper");
 			
 			StringTokenizer itr = new StringTokenizer(value.toString());
 			IntWritable friend1 = new IntWritable();
@@ -132,7 +140,7 @@ public class WhoToFollow extends Configured implements Tool
 
 	
 
-	public static class Reduce extends Reducer<IntWritable, IntWritable, IntWritable, IntWritable>
+	public static class Reduce1 extends Reducer<IntWritable, IntWritable, IntWritable, IntWritable>
 
 	{
 		
@@ -165,14 +173,10 @@ public class WhoToFollow extends Configured implements Tool
 
 		{
 
-		
-
 			IntWritable friend1 = new IntWritable(1);
 			IntWritable friend2 = new IntWritable(2);
 			Text word = new Text();
 			word.set("Raheel");
-
-			
 
 			context.write(friend1, friend2);
 
