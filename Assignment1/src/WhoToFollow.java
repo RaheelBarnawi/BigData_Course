@@ -38,14 +38,17 @@ public class WhoToFollow extends Configured implements Tool
 	  job.setMapperClass(Mapper.class);
 	  job.setReducerClass(Reducer.class);
 
+	  //reducer output(k,v) classes 
 	  job.setOutputKeyClass(IntWritable.class);
 	  job.setOutputValueClass(IntWritable.class);
-	  //job.setMapOutputKeyClass(IntWritable.class);
-	 // job.setMapOutputValueClass(IntWritable.class);
+	  
+	// mapper's output (K,V) classes
+	  job.setMapOutputKeyClass(IntWritable.class);
+	  job.setMapOutputValueClass(IntWritable.class);
 
 	 
 	  job.setOutputFormatClass(TextOutputFormat.class);
-	 job.setInputFormatClass(KeyValueTextInputFormat.class);
+	  job.setInputFormatClass(KeyValueTextInputFormat.class);
 
 	 FileInputFormat.addInputPath(job, new Path(args[0]));
 	  TextOutputFormat.setOutputPath(job, new Path(OUTPUT_PATH));
@@ -66,8 +69,9 @@ public class WhoToFollow extends Configured implements Tool
 	  job2.setOutputKeyClass(IntWritable.class);
 	  job2.setOutputValueClass(IntWritable.class);
 	  
-	  //job2.setMapOutputKeyClass(IntWritable.class);
-	  //job2.setMapOutputValueClass(IntWritable.class);
+	// mapper's output (K,V) classes
+	  job2.setMapOutputKeyClass(IntWritable.class);
+	  job2.setMapOutputValueClass(IntWritable.class);
 
 
 	 job2.setInputFormatClass(SequenceFileInputFormat.class);
