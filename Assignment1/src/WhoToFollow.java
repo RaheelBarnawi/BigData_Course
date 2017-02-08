@@ -146,19 +146,19 @@ public class WhoToFollow extends Configured implements Tool
 		
 		public void reduce(IntWritable key, Iterable<IntWritable> values, Context context)
 				throws IOException, InterruptedException {
-			ArrayList<Integer> existingFriends = new ArrayList();
-			IntWritable temp = new IntWritable(1);
-			// int counter=0;
+			//ArrayList<Integer> existingFriends = new ArrayList();
+			IntWritable temp = new IntWritable();
 			int value;
 			while (values.iterator().hasNext())
 			{
 				value = values.iterator().next().get();
-				existingFriends.add(value);
+				temp.set(value);
+				context.write(key, temp);
 				// counter++;
 			}
 
 			
-			context.write(key, temp);
+			
 		}
 	}
 
@@ -172,14 +172,32 @@ public class WhoToFollow extends Configured implements Tool
 		public void map(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException
 
 		{
-
-			IntWritable friend1 = new IntWritable(1);
-			IntWritable friend2 = new IntWritable(2);
-			Text word = new Text();
-			word.set("Raheel");
-
-			context.write(friend1, friend2);
-
+			ArrayList<Integer> existingFriends = new ArrayList();
+			ArrayList<Integer> recommendedUsers = new ArrayList<>();
+			IntWritable friend1 = new IntWritable();
+			IntWritable friend2 = new IntWritable();
+			IntWritable temp = new IntWritable();
+			while (values.iterator().hasNext()) {
+				int value = values.iterator().next().get();
+				// logR.info("print value"+ value );
+				if (value > 0)
+					recommendedUsers.add(value);
+				else
+					existingFriends.add(value);
+			}
+			for (int i = 0; i < recommendedUsers.size(); i++) {
+				friend1.set(recommendedUsers.get(i));
+				for (int j = 0; j < recommendedUsers.size(); j++) {
+					if (recommendedUsers.get(i) != recommendedUsers.get(j)) {
+						friend2.set(recommendedUsers.get(j));
+						context.write(friend1, friend2);
+					}
+				}
+			}
+			for (int i = 0; i < existingFriends.size(); i++) {
+				temp.set(existingFriends.get(i));
+				context.write(key, temp);
+			}
 		}
 
 	}
@@ -189,17 +207,75 @@ public class WhoToFollow extends Configured implements Tool
 	public static class ReduceRecommendation extends Reducer<IntWritable, IntWritable, IntWritable, IntWritable> {
 
 		public final Log logR = LogFactory.getLog(ReduceRecommendation.class);
+		
+		//**************************************************************
+		// A private class to describe a recommendation.
+        // A recommendation has a friend id and a number of friends in common.
+        private static class Recommendation {
 
-		public void reduce(IntWritable key, Iterable<IntWritable> value, Context context)
+            // Attributes
+            private int friendId;
+            private int nCommonFriends;
+
+            // Constructor
+            public Recommendation(int friendId) {
+                this.friendId = friendId;
+                // A recommendation must have at least 1 common friend
+                this.nCommonFriends = 1;
+            }
+
+            // Getters
+            public int getFriendId() {
+                return friendId;
+            }
+
+            public int getNCommonFriends() {
+                return nCommonFriends;
+            }
+
+            // Other methods
+            // Increments the number of common friends
+            public void addCommonFriend() {
+                nCommonFriends++;
+            }
+
+            // String representation used in the reduce output            
+            public String toString() {
+                return friendId + "(" + nCommonFriends + ")";
+            }
+
+            // Finds a representation in an array
+            public static Recommendation find(int friendId, ArrayList<Recommendation> recommendations) {
+                for (Recommendation p : recommendations) {
+                    if (p.getFriendId() == friendId) {
+                        return p;
+                    }
+                }
+                // Recommendation was not found!
+                return null;
+            }
+        }
+		//**************************************************************
+
+		public void reduce(IntWritable key, Iterable<IntWritable> values, Context context)
 				throws IOException, InterruptedException
 
 		{
+			IntWritable temp = new IntWritable();
+			int value;
+			while (values.iterator().hasNext())
+			{
+				value = values.iterator().next().get();
+				temp.set(value);
+				context.write(key, temp);
+				// counter++;
+			}
 
 			// ArrayList<Integer> existingFriends = new ArrayList();
 			// ArrayList<Integer> recommendedUsers = new ArrayList<>();
-			IntWritable friend1 = new IntWritable(1);
-			IntWritable friend2 = new IntWritable(2);
-			context.write(friend1, friend2);
+			///IntWritable friend1 = new IntWritable(1);
+			//IntWritable friend2 = new IntWritable(2);
+			//context.write(friend1, friend2);
 
 		}
 
