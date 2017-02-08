@@ -2,7 +2,7 @@
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.util.Tool;
 import java.io.IOException;
-
+import java.util.function.Predicate;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import java.util.*;
@@ -15,17 +15,11 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
-
+import java.util.Comparator;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
-
-
-
-import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;
-
 import org.apache.hadoop.util.ToolRunner;
 public class WhoToFollow extends Configured implements Tool
 
@@ -58,7 +52,7 @@ public class WhoToFollow extends Configured implements Tool
 	  job.setOutputFormatClass(SequenceFileOutputFormat.class);
 	 
 
-	 FileInputFormat.setInputPaths(job, new Path(args[0]));
+	  FileInputFormat.setInputPaths(job, new Path(args[0]));
 	  TextOutputFormat.setOutputPath(job, new Path(OUTPUT_PATH));
 
 	  job.waitForCompletion(true);
@@ -75,7 +69,7 @@ public class WhoToFollow extends Configured implements Tool
 	  log.info("job1 1");
 	  //reducer output(k,v) classes 
 	  job2.setOutputKeyClass(IntWritable.class);
-	  job2.setOutputValueClass(IntWritable.class);
+	  job2.setOutputValueClass(Text.class);
 	  log.info("job1 2");
 	// mapper's output (K,V) classes
 	  job2.setMapOutputKeyClass(IntWritable.class);
@@ -142,8 +136,7 @@ public class WhoToFollow extends Configured implements Tool
 
 	public static class Reduce1 extends Reducer<IntWritable, IntWritable, IntWritable, IntWritable>
 
-	{
-		
+	{		
 		public void reduce(IntWritable key, Iterable<IntWritable> values, Context context)
 				throws IOException, InterruptedException {
 			//ArrayList<Integer> existingFriends = new ArrayList();
@@ -154,10 +147,8 @@ public class WhoToFollow extends Configured implements Tool
 				value = values.iterator().next().get();
 				temp.set(value);
 				context.write(key, temp);
-				// counter++;
-			}
-
-			
+				
+			}	
 			
 		}
 	}
@@ -168,7 +159,6 @@ public class WhoToFollow extends Configured implements Tool
 
 	{
 
-	
 		public void map(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException
 
 		{
@@ -204,10 +194,10 @@ public class WhoToFollow extends Configured implements Tool
 
 	/* The Reducer for the second MapReduce job */
 
-	public static class ReduceRecommendation extends Reducer<IntWritable, IntWritable, IntWritable, IntWritable> {
+	public static class ReduceRecommendation extends Reducer<IntWritable, IntWritable, IntWritable, Text> {
 
 		public final Log logR = LogFactory.getLog(ReduceRecommendation.class);
-		
+	/*	
 		//**************************************************************
 		// A private class to describe a recommendation.
         // A recommendation has a friend id and a number of friends in common.
@@ -256,26 +246,63 @@ public class WhoToFollow extends Configured implements Tool
             }
         }
 		//**************************************************************
-
-		public void reduce(IntWritable key, Iterable<IntWritable> values, Context context)
-				throws IOException, InterruptedException
-
-		{
-			IntWritable temp = new IntWritable();
-			int value;
-			while (values.iterator().hasNext())
-			{
-				value = values.iterator().next().get();
-				temp.set(value);
-				context.write(key, temp);
-				// counter++;
-			}
-
-			// ArrayList<Integer> existingFriends = new ArrayList();
-			// ArrayList<Integer> recommendedUsers = new ArrayList<>();
-			///IntWritable friend1 = new IntWritable(1);
-			//IntWritable friend2 = new IntWritable(2);
-			//context.write(friend1, friend2);
+*/
+		public void reduce(IntWritable key, Iterable<IntWritable> values, Context context)throws IOException, InterruptedException{
+			IntWritable user = key;
+        // 'existingFriends' will store the friends of user 'user'
+        // (the negative values in 'values').
+        ArrayList<Integer> existingFriends = new ArrayList();
+        // 'recommendedUsers' will store the list of user ids recommended
+        // to user 'user'
+        ArrayList<Integer> recommendedUsers = new ArrayList<>();
+        while (values.iterator().hasNext()) {
+            int value = values.iterator().next().get();
+            if (value > 0) {
+                recommendedUsers.add(value);
+            } else {
+                existingFriends.add(value);
+            }
+        }
+       
+        for ( final Integer friend : existingFriends) 
+        {
+            recommendedUsers.removeIf(new Predicate<Integer>() 
+            {
+                @Override
+                public boolean test(Integer t) {
+                    return t.intValue() == -friend.intValue();
+                }
+            });
+        }
+        
+        // find  number of common friends using hash map  key is the recomanded user - value is number of friends in common 
+        Map<Integer,Integer> frequencymap = new HashMap<Integer,Integer>();
+      /*  ArrayList<Recommendation> recommendations = new ArrayList<>();
+        // Builds the recommendation array
+        for (Integer userId : recommendedUsers) {
+            Recommendation p = Recommendation.find(userId, recommendations);
+            if (p == null) {
+                recommendations.add(new Recommendation(userId));
+            } else {
+                p.addCommonFriend();
+            }
+        }
+        // Sorts the recommendation array
+        // See javadoc on Comparator at https://docs.oracle.com/javase/8/docs/api/java/util/Comparator.html
+        recommendations.sort(new Comparator<Recommendation>() {
+            @Override
+            public int compare(Recommendation t, Recommendation t1) {
+                return -Integer.compare(t.getNCommonFriends(), t1.getNCommonFriends());
+            }
+        });
+        // Builds the output string that will be emitted
+        StringBuffer sb = new StringBuffer(""); // Using a StringBuffer is more efficient than concatenating strings
+        for (int i = 0; i < recommendations.size() && i < 10; i++) {
+            Recommendation p = recommendations.get(i);
+            sb.append(p.toString() + " ");
+        }
+        Text result = new Text(sb.toString());*/
+        context.write(user, result);
 
 		}
 
