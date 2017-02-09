@@ -21,28 +21,16 @@ public  class SecondReduce extends Reducer<IntWritable, IntWritable, IntWritable
 			// 'existingFriends' will store the friends of user 'user'
 			// (the negative values in 'values').
 			ArrayList<Integer> existingFriends = new ArrayList();
-			ArrayList<Integer> test_input = new ArrayList<Integer>() {
-				private static final long serialVersionUID = 1L;
-
-				@Override
-				public String toString() {
-					return super.toString();
-				}
-			};
-
-			// 'recommendedUsers' will store the list of user ids recommended
-			// to user 'user'
-			ArrayList<Integer> recommendedUsers = new ArrayList<>();
-			while (values.iterator().hasNext()) {
+			ArrayList<Integer> recommendedUsers = new ArrayList<>();//'recommendedUsers' will store the list of user ids recommended to user 'user'
+			while (values.iterator().hasNext()) 
+			{
 				int value = values.iterator().next().get();
-				test_input.add(value);
-				if (value > 0) {
+				if (value > 0) 
 					recommendedUsers.add(value);
-				} else {
+				else 
 					existingFriends.add(value);
-				}
+				
 			}
-			//logR.info(" second_reducer_value" + test_input.toString());
 
 			for (final Integer friend : existingFriends) {
 				recommendedUsers.removeIf(new Predicate<Integer>() {
