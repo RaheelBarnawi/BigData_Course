@@ -1,38 +1,35 @@
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
-
-//import org.apache.commons.logging.Log;
-//import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
-//import org.apache.hadoop.mapreduce.Mapper.Context;
 
+// first step : Indexing:
+public class FirstMap extends Mapper<Object, Text, IntWritable, IntWritable> {
 
-public  class FirstMap extends Mapper<Object, Text, IntWritable, IntWritable> {
-		//public final Log log = LogFactory.getLog(Map1.class);
+	public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
 
-		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
-
-			StringTokenizer itr = new StringTokenizer(value.toString());
-			IntWritable friend1 = new IntWritable();
-			IntWritable followed = new IntWritable();
-			IntWritable user = new IntWritable();
-			ArrayList<Integer> frinedList = new ArrayList<>();
-			user.set(Integer.parseInt(itr.nextToken()));
-			while (itr.hasMoreTokens()) {
+		StringTokenizer itr = new StringTokenizer(value.toString());
+		IntWritable followed_by = new IntWritable();
+		IntWritable followed = new IntWritable();
+		IntWritable user = new IntWritable();
+		ArrayList<Integer> frinedList = new ArrayList<>();
+		user.set(Integer.parseInt(itr.nextToken())); // first token is the user X
+		while (itr.hasMoreTokens()) 
+		{
+			frinedList.add(Integer.parseInt(itr.nextToken()));// convert all tokens to type Integer
 			
-				frinedList.add(Integer.parseInt(itr.nextToken()));
-			}
+		}
 
-			for (Integer friend : frinedList) {
-				friend1.set(friend);
-				context.write(friend1, user);// emit friend as a key and user as
-												// a value
-				followed.set(-friend);// use the - trick to keep track on people
-										// followed by user
-				context.write(user, followed);
-			}
+		for (Integer friend : frinedList) 
+		{
+			followed_by.set(friend);/// emit friend  as the key and user as the value
+			context.write(followed_by, user);
+			followed.set(-friend); // use the negative trick to keep track on user existing friends
+			context.write(user, followed); 
+		
+
 		}
 	}
+}
