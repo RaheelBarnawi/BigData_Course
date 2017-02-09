@@ -4,18 +4,17 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 //import org.apache.hadoop.mapreduce.Reducer.Context;
 
+
 public  class FirstReduce extends Reducer<IntWritable, IntWritable, IntWritable, Text>
 
-	{
-		public void reduce(IntWritable key, Iterable<IntWritable> values, Context context)
-				throws IOException, InterruptedException {
-			// ArrayList<Integer> existingFriends = new ArrayList();
-		//	IntWritable temp = new IntWritable();
-			String value = "";
-			while (values.iterator().hasNext()) {
-				value += values.iterator().next().get() + " ";	
-				}
-			context.write(key, new Text(value));
+{public void reduce(IntWritable key, Iterable<IntWritable> values, Context context)throws IOException, InterruptedException {
 
+		String value = "";
+		while (values.iterator().hasNext())
+		{
+			value += values.iterator().next().get() + " ";
 		}
+		context.write(key, new Text(value)); // emit inverted lists
+
 	}
+}
