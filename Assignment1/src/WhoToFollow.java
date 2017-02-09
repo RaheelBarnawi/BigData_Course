@@ -33,22 +33,10 @@ public class WhoToFollow extends Configured implements Tool
 		FileSystem fs = FileSystem.get(conf);
 		Job job = Job.getInstance(conf, "Job1");
 		job.setJarByClass(WhoToFollow.class);
-		// log.info(" job 0");
 		job.setMapperClass(FirstMap.class);
 		job.setReducerClass(FirstReduce.class);
-		// log.info(" job 1");
-		// reducer output(k,v) classes
 		job.setOutputKeyClass(IntWritable.class);
 		job.setOutputValueClass(IntWritable.class);
-		// log.info("job 2");
-		// mapper's output (K,V) classes
-		//job.setMapOutputKeyClass(IntWritable.class);
-	    //job.setMapOutputValueClass(IntWritable.class);
-		// log.info("job 3");
-		//job.setInputFormatClass(Text.class);
-		//job.setOutputFormatClass(SequenceFileOutputFormat.class);
-		//job.setOutputKeyClass(IntWritable.class);
-       // job.setOutputValueClass(IntWritable.class);
 		FileInputFormat.addInputPath(job, new Path(args[0]));
 		FileOutputFormat.setOutputPath(job, new Path(OUTPUT_PATH));
 
@@ -61,34 +49,17 @@ public class WhoToFollow extends Configured implements Tool
 		Configuration conf1 = new Configuration();//getConf();
 		Job job2 = Job.getInstance(conf1, "Job 2");
 		job2.setJarByClass(WhoToFollow.class);
-		// log.info("job1 0");
 		job2.setMapperClass(SecondMap.class);
 		job2.setReducerClass(SecondReduce.class);
-		// log.info("job1 1");
-		
 		job2.setOutputKeyClass(IntWritable.class);
 		job2.setOutputValueClass(IntWritable.class);
-		// log.info("job1 2");
-		// mapper's output (K,V) classes
-		//job2.setMapOutputKeyClass(IntWritable.class);
-	    //job2.setMapOutputValueClass(IntWritable.class);
-		// log.info("job1 3");
-
-		//job2.setInputFormatClass(SequenceFileInputFormat.class);
-		//job2.setOutputFormatClass(TextOutputFormat.class);
-		// log.info("job1 4");
 		FileInputFormat.addInputPath(job2, new Path(OUTPUT_PATH));
 		FileOutputFormat.setOutputPath(job2, new Path(args[1]));
-
 		return job2.waitForCompletion(true) ? 0 : 1;
 	}
 
 
-	/**
-	 * Method Name: main Return type: none Purpose:Read the arguments from
-	 * command line and run the Job till completion
-	 * 
-	 */
+
 	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
 		if (args.length != 2) {
